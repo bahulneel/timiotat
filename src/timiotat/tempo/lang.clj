@@ -5,10 +5,14 @@
 
 (defrecord Automaton [])
 
-(defmacro automaton
-  [& args]
-  `(->Automaton))
+(defn automaton
+  [args & body]
+  (->Automaton))
 
 (defn automaton?
   [a]
   (instance? Automaton a))
+
+(defn state
+  [a v]
+  nil)

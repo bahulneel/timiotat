@@ -4,70 +4,75 @@
 
 (facts "About: Fischer’s Timed Mutual Exclusion Algorithm"
        (let [fischer
-             (automaton [l-check u-set]
-                        (where (< u-set l-check)
-                               (>= u-set 0)
-                               (>= l-check 0))
-                        (sig
-                         (output :try i)
-                         (output :crit i)
-                         (output :exit i)
-                         (output :rem i)
-                         (intern :test i)
-                         (intern :set i)
-                         (intern :check i)
-                         (intern :reset i))
-                        (states
-                         (state turn nil)
-                         (state [:pc i] :pc/rem)
-                         (state now 0)
-                         (state [:last-set i] inf)
-                         (state [:first-check i] 0))
-                        (transitions
-                         (output :try i
-                                 (pre (= [:pc i] :pc/rem))
-                                 (eff =>
-                                      (= [:pc i] :pc/test)))
-                         (intern :test i
-                                 (pre (= [:pc i] :pc/test))
-                                 (eff (= turn nil) =>
-                                      (= [:pc i] :pc/set)
-                                      (= [:last-set i] (+ now u-set))))
-                         (intern :set i
-                                 (pre (= [:pc i] :pc/test))
-                                 (eff =>
-                                      (= [:pc i] :pc/check)
-                                      (= [:last-set i] inf)
-                                      (= [:first-check i]) (+ now u-set)))
-                         (intern :check i
-                                 (pre (= [:pc i] :pc/check)
-                                      (<= [:first-check i] now))
-                                 (eff (= turn i) =>
-                                      (= [:pc i] :pc/leave-try))
-                                 (eff (!= turn i) =>
-                                      (= [:pc i] :pc/test))
-                                 (eff =>
-                                      (= [:first-check i] 0)))
-                         (output :crit i
-                                 (pre (= [:pc i] :pc/leave-try))
-                                 (eff =>
-                                      (= [:pc i] :pc/crit)))
-                         (output :exit i
-                                 (pre (= [:pc i] :pc/crit))
-                                 (eff =>
-                                      (= [:pc i] :pc/reset)))
-                         (intern :reset i
-                                 (pre (= [:pc i] :pc/reset))
-                                 (eff =>
-                                      (= [:pc i] :pc/leave-exit)
-                                      (= turn nil)))
-                         (output :rem i
-                                 (pre (= [:pc i] :pc/leave-exit))
-                                 (eff =>
-                                      (= [:pc i] :pc/rem))))
-                        (trajectories
-                         (traject traj
-                                  (stop [(= [:last-set i] now)])
-                                  (evolve [:delta now 1]))))]
+             (automaton '[[l-check u-set]
+                          :where [(< u-set l-check)
+                                  (>= u-set 0)
+                                  (>= l-check 0)]
+                          :state [(proc i)
+                                  (turn nil)
+                                  (pc i :pc/rem)
+                                  (now 0)
+                                  (last-set i inf)
+                                  (first-check i 0)]
+                          :trans [[(<try i)
+                                   [(proc i)
+                                    (pc i :pc/rem)
+                                    (pc' i :pc/test)]]
+                                  [(=test i)
+                                   [(proc i)
+                                    (pc i :pc/test)
+                                    (turn nil)
+                                    (pc' i :pc/set)
+                                    (last-set' i (+ now u-set))]]
+                                  [(=set i)
+                                   [(proc i)
+                                    (pc i :pc/test)
+                                    (pc' i :pc/check)
+                                    (last-set' i inf)
+                                    (now ?n)
+                                    (first-check' i (+ ?n u-set))]]
+                                  [(=check i)
+                                   [(proc i)
+                                    (:pc i :pc/check)
+                                    (first-check i ?t)
+                                    (<= ?t now)
+                                    (turn ?p)
+                                    #{[(= i ?p) (pc' i :pc/leave-try)]
+                                      [(!= i ?p) (pc' i :pc/test)]}
+                                    (first-check' i 0)]]
+                                  [(<crit i)
+                                   [(proc i)
+                                    (pc i :pc/leave-try)
+                                    (pc' i :pc/crit)]]
+                                  [(<exit i)
+                                   [(proc i)
+                                    (pc i :pc/crit)
+                                    (pc' i :pc/reset)]]
+                                  [(=reset i)
+                                   [(proc i)
+                                    (pc i :pc/reset)
+                                    (pc' i :pc/leave-exit)
+                                    (turn' nil)]]
+                                  [(<rem i)
+                                   [(proc i)
+                                    (pc i :pc/leave-exit)
+                                    (pc' i :pc/rem)]]]
+                          :traj [(traj :clock
+                                       [(proc i)
+                                        (last-set i now)]
+                                       [(delta now now' 1)])]
+                          :invar [(proc i)
+                                  (proc j)
+                                  (!= i j)
+                                  (pc i ?pc-i)
+                                  (!= ?pc-i :pc/crit)
+                                  (pc j ?pc-j)
+                                  (!= ?pc-j :pc/crit)]])]
          (fact "We have an automaton"
-               (automaton? fischer) => true)))
+               (automaton? fischer) => true)
+         (fact "The initial state is correct"
+               (state fischer 'turn) => nil
+               (state fischer 'now) => nil
+               (state fischer '[:pc 1]) => :pc/rem
+               (state fischer '[:last-set 1]) => +inf
+               (state fischer '[:first-check 1]) => 0)))
