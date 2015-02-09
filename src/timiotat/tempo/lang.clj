@@ -6,26 +6,30 @@
 
 (declare init-state)
 
-(defrecord Automata [state])
+(defrecord Automaton [state automaton])
 
-(defrecord Automaton [args where state trans traj invar]
+(defrecord Automata [args where state trans traj invar]
   clojure.lang.IFn
-  (invoke [_ arg-list]
+  (invoke [this arg-list]
     (let [in (count arg-list)
           req (count args)]
       (assert (= in req)
               (str "Incorrect number of args " in " != " req)))
     (let [a (zipmap args arg-list)
           s (init-state state)]
-      (->Automata (merge a s)))))
+      (->Automaton (merge a s) this))))
 
-(defn automaton
+(defn automata
   [def]
-  (map->Automaton def))
+  (map->Automata def))
 
 (defn automaton?
   [a]
   (instance? Automaton a))
+
+(defn automata?
+  [a]
+  (instance? Automata a))
 
 (defn init-state
   [s]

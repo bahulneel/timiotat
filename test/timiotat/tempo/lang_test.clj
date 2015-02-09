@@ -4,7 +4,7 @@
 
 (facts "About: Fischer’s Timed Mutual Exclusion Algorithm"
        (let [fischer
-             (automaton '{:args [l-check u-set]
+             (automata '{:args [l-check u-set]
                           :where [(< u-set l-check)
                                   (>= u-set 0)
                                   (>= l-check 0)]
@@ -69,14 +69,15 @@
                                   (!= ?pc-i :pc/crit)
                                   (pc j ?pc-j)
                                   (!= ?pc-j :pc/crit)]})]
-         (fact "We have an automaton"
-               (automaton? fischer) => true)
+         (fact "We have an automata"
+               (automata? fischer) => true)
          (fact "Can initialise an instance"
                (fischer [1]) => throws
                (fischer [1 2]) => anything
                (fischer [1 2 3]) => throws)
          (fact "The initial state is correct"
                (let [f (fischer [1 2])]
+                 (automaton? f) => true
                  (state f 'turn) => nil
                  (state f 'now) => 0
                  (state f 'pc 1) => :pc/rem
