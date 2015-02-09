@@ -23,13 +23,13 @@
   [def]
   (map->Automata def))
 
-(defn automaton?
-  [a]
-  (instance? Automaton a))
-
 (defn automata?
   [a]
   (instance? Automata a))
+
+(defn automaton?
+  [a]
+  (instance? Automaton a))
 
 (defn init-state
   [s]
