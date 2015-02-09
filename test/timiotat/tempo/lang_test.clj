@@ -4,7 +4,7 @@
 
 (facts "About: Fischer’s Timed Mutual Exclusion Algorithm"
        (let [fischer
-             (automaton '[[l-check u-set]
+             (automaton '{:args [l-check u-set]
                           :where [(< u-set l-check)
                                   (>= u-set 0)
                                   (>= l-check 0)]
@@ -12,7 +12,7 @@
                                   (turn nil)
                                   (pc i :pc/rem)
                                   (now 0)
-                                  (last-set i inf)
+                                  (last-set i +inf)
                                   (first-check i 0)]
                           :trans [[(<try i)
                                    [(proc i)
@@ -23,12 +23,13 @@
                                     (pc i :pc/test)
                                     (turn nil)
                                     (pc' i :pc/set)
-                                    (last-set' i (+ now u-set))]]
+                                    (now ?n)
+                                    (last-set' i (+ ?n u-set))]]
                                   [(=set i)
                                    [(proc i)
                                     (pc i :pc/test)
                                     (pc' i :pc/check)
-                                    (last-set' i inf)
+                                    (last-set' i +inf)
                                     (now ?n)
                                     (first-check' i (+ ?n u-set))]]
                                   [(=check i)
@@ -67,12 +68,17 @@
                                   (pc i ?pc-i)
                                   (!= ?pc-i :pc/crit)
                                   (pc j ?pc-j)
-                                  (!= ?pc-j :pc/crit)]])]
+                                  (!= ?pc-j :pc/crit)]})]
          (fact "We have an automaton"
                (automaton? fischer) => true)
+         (fact "Can initialise an instance"
+               (fischer [1]) => throws
+               (fischer [1 2]) => anything
+               (fischer [1 2 3]) => throws)
          (fact "The initial state is correct"
-               (state fischer 'turn) => nil
-               (state fischer 'now) => nil
-               (state fischer '[:pc 1]) => :pc/rem
-               (state fischer '[:last-set 1]) => +inf
-               (state fischer '[:first-check 1]) => 0)))
+               (let [f (fischer [1 2])]
+                 (state f 'turn) => nil
+                 (state f 'now) => 0
+                 (state f 'pc 1) => :pc/rem
+                 (state f 'last-set 1) => +inf
+                 (state f 'first-check 1) => 0))))
